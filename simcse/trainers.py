@@ -89,7 +89,6 @@ from filelock import FileLock
 logger = logging.get_logger(__name__)
 
 class CLTrainer(Trainer):
-
     def evaluate(
         self,
         eval_dataset: Optional[Dataset] = None,
@@ -97,8 +96,7 @@ class CLTrainer(Trainer):
         metric_key_prefix: str = "eval",
         eval_senteval_transfer: bool = False,
     ) -> Dict[str, float]:
-
-        # SentEval prepare and batcher
+        # Existing SentEval evaluation code
         def prepare(params, samples):
             return
 
@@ -116,10 +114,9 @@ class CLTrainer(Trainer):
                 pooler_output = outputs.pooler_output
             return pooler_output.cpu()
 
-        # Set params for SentEval (fastmode)
         params = {'task_path': PATH_TO_DATA, 'usepytorch': True, 'kfold': 5}
         params['classifier'] = {'nhid': 0, 'optim': 'rmsprop', 'batch_size': 128,
-                                            'tenacity': 3, 'epoch_size': 2}
+                                'tenacity': 3, 'epoch_size': 2}
 
         se = senteval.engine.SE(params, batcher, prepare)
         tasks = ['STSBenchmark', 'SICKRelatedness']
@@ -131,7 +128,7 @@ class CLTrainer(Trainer):
         stsb_spearman = results['STSBenchmark']['dev']['spearman'][0]
         sickr_spearman = results['SICKRelatedness']['dev']['spearman'][0]
 
-        metrics = {"eval_stsb_spearman": stsb_spearman, "eval_sickr_spearman": sickr_spearman, "eval_avg_sts": (stsb_spearman + sickr_spearman) / 2} 
+        metrics = {"eval_stsb_spearman": stsb_spearman, "eval_sickr_spearman": sickr_spearman, "eval_avg_sts": (stsb_spearman + sickr_spearman) / 2}
         if eval_senteval_transfer or self.args.eval_transfer:
             avg_transfer = 0
             for task in ['MR', 'CR', 'SUBJ', 'MPQA', 'SST2', 'TREC', 'MRPC']:
@@ -139,6 +136,74 @@ class CLTrainer(Trainer):
                 metrics['eval_{}'.format(task)] = results[task]['devacc']
             avg_transfer /= 7
             metrics['eval_avg_transfer'] = avg_transfer
+
+        # New code for custom STS evaluation
+        if hasattr(self, 'data_args') and self.data_args.sts_csv_files:
+            from datasets import load_dataset
+            from torch.utils.data import DataLoader, Dataset
+            from transformers import DataCollatorWithPadding
+            import numpy as np
+            from scipy.stats import spearmanr
+            import os
+
+            for sts_file in self.data_args.sts_csv_files:
+                # Load the dataset
+                dataset = load_dataset('csv', data_files=sts_file, delimiter=',')['train']
+                sentence1 = dataset['sentence1']
+                sentence2 = dataset['sentence2']
+                labels = dataset['label']
+
+                # Tokenize with padding to max_length
+                sent1_features = self.tokenizer(sentence1, padding=True, truncation=True, 
+                                               max_length=self.data_args.max_seq_length, return_tensors='pt')
+                sent2_features = self.tokenizer(sentence2, padding=True, truncation=True, 
+                                               max_length=self.data_args.max_seq_length, return_tensors='pt')
+
+                # Create datasets
+                class TensorDataset(Dataset):
+                    def __init__(self, features):
+                        self.features = features
+                    def __len__(self):
+                        return self.features['input_ids'].size(0)
+                    def __getitem__(self, idx):
+                        return {k: v[idx] for k, v in self.features.items()}
+
+                sent1_dataset = TensorDataset(sent1_features)
+                sent2_dataset = TensorDataset(sent2_features)
+
+                # DataLoader
+                sent1_loader = DataLoader(sent1_dataset, batch_size=128, shuffle=False)
+                sent2_loader = DataLoader(sent2_dataset, batch_size=128, shuffle=False)
+
+                # Encode sentences
+                sent1_embeddings = []
+                for batch in sent1_loader:
+                    batch = {k: v.to(self.args.device) for k, v in batch.items()}
+                    with torch.no_grad():
+                        outputs = self.model(**batch, output_hidden_states=True, return_dict=True, sent_emb=True)
+                        embeddings = outputs.pooler_output
+                        sent1_embeddings.append(embeddings.cpu())
+                sent1_embeddings = torch.cat(sent1_embeddings, dim=0)
+
+                sent2_embeddings = []
+                for batch in sent2_loader:
+                    batch = {k: v.to(self.args.device) for k, v in batch.items()}
+                    with torch.no_grad():
+                        outputs = self.model(**batch, output_hidden_states=True, return_dict=True, sent_emb=True)
+                        embeddings = outputs.pooler_output
+                        sent2_embeddings.append(embeddings.cpu())
+                sent2_embeddings = torch.cat(sent2_embeddings, dim=0)
+
+                # Compute cosine similarities
+                similarities = torch.nn.functional.cosine_similarity(sent1_embeddings, sent2_embeddings, dim=-1).numpy()
+                labels = np.array(labels)
+
+                # Compute Spearman's correlation
+                spearman_corr, _ = spearmanr(similarities, labels)
+
+                # Log the result
+                file_name = os.path.basename(sts_file)
+                metrics[f'eval_{file_name}_spearman'] = spearman_corr
 
         self.log(metrics)
         return metrics
