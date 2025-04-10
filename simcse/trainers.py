@@ -151,7 +151,7 @@ class CLTrainer(Trainer):
                 dataset = load_dataset('csv', data_files=sts_file, delimiter=',')['train']
                 sentence1 = dataset['sentence1']
                 sentence2 = dataset['sentence2']
-                labels = dataset['label']
+                labels = dataset['score']
 
                 # Tokenize with padding to max_length
                 sent1_features = self.tokenizer(sentence1, padding=True, truncation=True, 
