@@ -23,7 +23,6 @@ from transformers.trainer_utils import (
     PredictionOutput,
     TrainOutput,
     default_compute_objective,
-    default_hp_space,
     set_seed,
     speed_metrics,
 )
