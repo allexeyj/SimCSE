@@ -252,7 +252,6 @@ class OurTrainingArguments(TrainingArguments):
 
         return device
     def __post_init__(self):
-        super().__post_init__()
 
         logger.info(f"Inside OurTrainingArguments __post_init__ - BEFORE adjustments:")
         logger.info(f"  evaluation_strategy={self.evaluation_strategy}")
@@ -285,6 +284,11 @@ class OurTrainingArguments(TrainingArguments):
         logger.info(f"  evaluation_strategy={self.evaluation_strategy}")
         logger.info(f"  save_strategy={self.save_strategy}")
         logger.info(f"  do_eval={self.do_eval}")
+        super().__post_init__()
+        logger.info(f"Inside OurTrainingArguments __post_init__ - AFTER super().__post_init__ called")
+        logger.info(f"  evaluation_strategy={self.evaluation_strategy}")
+        logger.info(f"  save_strategy={self.save_strategy}")
+        logger.info(f"  load_best_model_at_end={self.load_best_model_at_end}")
 
 
 def main():
