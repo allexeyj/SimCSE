@@ -1,3 +1,6 @@
+from transformers import IntervalStrategy, SchedulerType
+
+
 import logging
 import math
 import os
@@ -258,17 +261,48 @@ def main():
     # We now keep distinct sets of args, for a cleaner separation of concerns.
 
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, OurTrainingArguments))
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        # If we pass only one argument to the script and it's the path to a json file,
-        # let's parse it to get our arguments.
-        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
-    else:
-        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    #if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+    #    # If we pass only one argument to the script and it's the path to a json file,
+    #    # let's parse it to get our arguments.
+    #    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
+    #else:
+    #    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    model_args = ModelArguments(model_name_or_path='/kaggle/input/rumodernbert-base/RuModernBERT-base', model_type=None,
+                            config_name=None, tokenizer_name=None, cache_dir=None, use_fast_tokenizer=True,
+                            model_revision='main',
+                            use_auth_token=False, temp=0.05, pooler_type='cls', hard_negative_weight=0, do_mlm=False,
+                            mlm_weight=0.1,
+                            mlp_only_train=False)
+    data_args = DataTrainingArguments(sts_csv_files=['/kaggle/input/simcse-data/russian_sts.csv'], dataset_name=None,
+                                  dataset_config_name=None, overwrite_cache=False, validation_split_percentage=5,
+                                  preprocessing_num_workers=None,
+                                  train_file='/kaggle/input/simcse-data/ru_hnp_for_simcse.csv',
+                                  max_seq_length=32, pad_to_max_length=False, mlm_probability=0.15)
+    training_args = OurTrainingArguments(output_dir='result/my-sup-simcse-bert-base-uncased', overwrite_output_dir=True,
+                                     do_train=True,
+                                     do_eval=True, do_predict=False,
+                                     evaluation_strategy=IntervalStrategy.STEPS, prediction_loss_only=False,
+                                     per_device_train_batch_size=128, per_device_eval_batch_size=8,
+                                     per_gpu_train_batch_size=None, per_gpu_eval_batch_size=None,
+                                     gradient_accumulation_steps=1, eval_accumulation_steps=None, learning_rate=5e-05,
+                                     weight_decay=0.0, adam_beta1=0.9, adam_beta2=0.999, adam_epsilon=1e-08,
+                                     max_grad_norm=1.0, num_train_epochs=3.0, max_steps=-1,
+                                     lr_scheduler_type=SchedulerType.LINEAR, warmup_steps=0,
+                                     logging_dir='runs/Apr11_00-50-46_4cdc191bd318', logging_first_step=False,
+                                     logging_steps=500, save_steps=500, save_total_limit=None, no_cuda=False, seed=42,
+                                     fp16=True, fp16_opt_level='O1', fp16_backend='auto', local_rank=-1,
+                                     tpu_num_cores=None, tpu_metrics_debug=False, debug=False,
+                                     dataloader_drop_last=False, eval_steps=125, dataloader_num_workers=0,
+                                     past_index=-1, run_name='result/my-sup-simcse-bert-base-uncased',
+                                     disable_tqdm=False, remove_unused_columns=True, label_names=None,
+                                     load_best_model_at_end=True, metric_for_best_model='stsb_spearman',
+                                     greater_is_better=True, ignore_data_skip=False, sharded_ddp=False, deepspeed=None,
+                                     label_smoothing_factor=0.0, adafactor=False, eval_transfer=False)
 
     
     
     
-    print(model_args, data_args, training_args, sep='\n')
+    #print(model_args, data_args, training_args, sep='\n')
     
     
     
