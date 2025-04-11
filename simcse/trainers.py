@@ -74,7 +74,8 @@ if is_datasets_available():
     import datasets
 
 #from transformers.trainer import _model_unwrap
-from transformers.optimization import Adafactor, AdamW, get_scheduler
+from torch.optim import AdamW
+from transformers.optimization import Adafactor, get_scheduler
 import copy
 # Set path to SentEval
 PATH_TO_SENTEVAL = './SentEval'
