@@ -580,12 +580,75 @@ def main():
 
     data_collator = default_data_collator if data_args.pad_to_max_length else OurDataCollatorWithPadding(tokenizer)
 
+
+
+    eval_dataset = None
+    # Load evaluation dataset only if evaluation is enabled and files are provided
+    if training_args.do_eval and data_args.sts_csv_files and data_args.sts_csv_files[0]:
+        logger.info(f"Loading evaluation dataset from {data_args.sts_csv_files[0]} for Trainer")
+        # Use the first STS file as the eval_dataset for the Trainer's internal loop
+        # Note: Your custom evaluate method will still use SentEval and potentially all sts_csv_files
+        try:
+            eval_data_files = {'validation': data_args.sts_csv_files[0]}
+            # Determine delimiter based on file extension or content if needed
+            delimiter = ',' # Assuming comma for CSV
+            eval_dataset = load_dataset('csv', data_files=eval_data_files, delimiter=delimiter, cache_dir="./data/")['validation']
+
+            # You might need minimal preprocessing if the base Trainer complains later,
+            # but often just providing the dataset object is enough when overriding evaluate.
+            # Example minimal preprocessing (adapt column names if needed):
+            def prepare_eval_features(examples):
+                 # Just tokenize sentence pairs, CLTrainer.evaluate handles embeddings/similarity
+                 if 'sentence1' not in examples or 'sentence2' not in examples:
+                     logger.warning("Evaluation dataset missing 'sentence1' or 'sentence2'. Skipping preprocessing.")
+                     return {} # Or handle differently if columns have other names
+                 args = (
+                    (examples['sentence1'],) if 'sentence2' not in examples else (examples['sentence1'], examples['sentence2'])
+                 )
+                 result = tokenizer(*args, padding="max_length", max_length=data_args.max_seq_length, truncation=True)
+                 if 'score' in examples: # Assuming 'score' is the label column name
+                     result["labels"] = examples["score"]
+                 elif 'label' in examples:
+                      result["labels"] = examples["label"]
+                 return result
+
+            # Check if columns exist before mapping
+            eval_cols = eval_dataset.column_names
+            required_cols = ['sentence1', 'sentence2'] # Adjust if your eval CSV has different names
+            if all(col in eval_cols for col in required_cols):
+                 logger.info("Preprocessing evaluation dataset for Trainer...")
+                 eval_dataset = eval_dataset.map(
+                    prepare_eval_features,
+                    batched=True,
+                    num_proc=data_args.preprocessing_num_workers,
+                    # remove_columns=eval_dataset.column_names, # Keep columns needed by default collator/eval loop
+                    load_from_cache_file=not data_args.overwrite_cache,
+                 )
+                 # Ensure 'labels' column exists if using default compute_metrics
+                 if "labels" not in eval_dataset.column_names and 'score' in eval_cols:
+                    eval_dataset = eval_dataset.rename_column("score", "labels")
+
+            else:
+                logger.warning(f"Evaluation dataset {data_args.sts_csv_files[0]} missing required columns {required_cols}. Passing raw dataset to Trainer.")
+
+
+        except Exception as e:
+            logger.error(f"Failed to load or preprocess evaluation dataset: {e}", exc_info=True)
+            # Decide how to handle: either raise error or proceed without eval_dataset (requires changing eval_strategy)
+            raise ValueError(f"Could not load evaluation dataset {data_args.sts_csv_files[0]}. Set eval_strategy='no' or fix dataset.") from e
+
+    # 
+    
+
+
+    
     trainer = CLTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
         tokenizer=tokenizer,
         data_collator=data_collator,
+        eval_dataset=eval_dataset
     )
     trainer.model_args = model_args
     trainer.data_args = data_args
