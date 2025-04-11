@@ -267,13 +267,13 @@ def main():
     #    model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
     #else:
     #    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-    model_args = TrainingArguments(model_name_or_path='/kaggle/input/rumodernbert-base/RuModernBERT-base', model_type=None,
+    model_args = ModelArguments(model_name_or_path='/kaggle/input/rumodernbert-base/RuModernBERT-base', model_type=None,
                             config_name=None, tokenizer_name=None, cache_dir=None, use_fast_tokenizer=True,
                             model_revision='main',
                             use_auth_token=False, temp=0.05, pooler_type='cls', hard_negative_weight=0, do_mlm=False,
                             mlm_weight=0.1,
                             mlp_only_train=False)
-    data_args = TrainingArguments(sts_csv_files=['/kaggle/input/simcse-data/russian_sts.csv'], dataset_name=None,
+    data_args = DataTrainingArguments(sts_csv_files=['/kaggle/input/simcse-data/russian_sts.csv'], dataset_name=None,
                                   dataset_config_name=None, overwrite_cache=False, validation_split_percentage=5,
                                   preprocessing_num_workers=None,
                                   train_file='/kaggle/input/simcse-data/ru_hnp_for_simcse.csv',
