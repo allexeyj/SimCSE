@@ -296,7 +296,7 @@ def main():
                                      past_index=-1, run_name='result/my-sup-simcse-bert-base-uncased',
                                      disable_tqdm=False, remove_unused_columns=True, label_names=None,
                                      load_best_model_at_end=True, metric_for_best_model='stsb_spearman',
-                                     greater_is_better=True, ignore_data_skip=False, sharded_ddp=False, deepspeed=None,
+                                     greater_is_better=True, ignore_data_skip=False, deepspeed=None,
                                      label_smoothing_factor=0.0, adafactor=False, eval_transfer=False)
 
     
