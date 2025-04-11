@@ -280,7 +280,7 @@ def main():
                                   max_seq_length=32, pad_to_max_length=False, mlm_probability=0.15)
     training_args = OurTrainingArguments(output_dir='result/my-sup-simcse-bert-base-uncased', overwrite_output_dir=True,
                                      do_train=True,
-                                     do_eval=True, do_predict=False,
+                                     do_eval=True, do_predict=False, distributed_state=None,
                                      eval_strategy=IntervalStrategy.STEPS, prediction_loss_only=False,
                                      per_device_train_batch_size=128, per_device_eval_batch_size=8,
                                      per_gpu_train_batch_size=None, per_gpu_eval_batch_size=None,
