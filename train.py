@@ -251,45 +251,6 @@ class OurTrainingArguments(TrainingArguments):
             torch.cuda.set_device(device)
 
         return device
-    def __post_init__(self):
-
-        logger.info(f"Inside OurTrainingArguments __post_init__ - BEFORE adjustments:")
-        logger.info(f"  evaluation_strategy={self.evaluation_strategy}")
-        logger.info(f"  save_strategy={self.save_strategy}")
-        logger.info(f"  load_best_model_at_end={self.load_best_model_at_end}")
-        logger.info(f"  do_eval={self.do_eval}")
-
-    
-        if self.load_best_model_at_end:
-            if self.evaluation_strategy == IntervalStrategy.NO:
-                logger.warning(f"Overriding evaluation_strategy from {self.evaluation_strategy} to 'steps' because load_best_model_at_end is True.")
-                self.evaluation_strategy = IntervalStrategy.STEPS
-
-            if self.save_strategy != self.evaluation_strategy:
-                 logger.warning(f"Overriding save_strategy from {self.save_strategy} to {self.evaluation_strategy} to match evaluation_strategy because load_best_model_at_end is True.")
-                 self.save_strategy = self.evaluation_strategy
-
-            if not self.do_eval:
-                logger.warning(f"Setting do_eval=True because load_best_model_at_end is True.")
-                self.do_eval = True
-
-        elif self.do_eval and self.evaluation_strategy == IntervalStrategy.NO:
-             logger.warning(f"evaluation_strategy is 'no' but do_eval is True. Setting evaluation_strategy to 'steps' for intermediate evaluations.")
-             self.evaluation_strategy = IntervalStrategy.STEPS
-             if self.save_strategy == IntervalStrategy.NO:
-                 self.save_strategy = self.evaluation_strategy
-
-
-        logger.info(f"Inside OurTrainingArguments __post_init__ - AFTER adjustments:")
-        logger.info(f"  evaluation_strategy={self.evaluation_strategy}")
-        logger.info(f"  save_strategy={self.save_strategy}")
-        logger.info(f"  do_eval={self.do_eval}")
-        super().__post_init__()
-        logger.info(f"Inside OurTrainingArguments __post_init__ - AFTER super().__post_init__ called")
-        logger.info(f"  evaluation_strategy={self.evaluation_strategy}")
-        logger.info(f"  save_strategy={self.save_strategy}")
-        logger.info(f"  load_best_model_at_end={self.load_best_model_at_end}")
-
 
 def main():
     # See all possible arguments in src/transformers/training_args.py
