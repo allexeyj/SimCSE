@@ -266,6 +266,13 @@ def main():
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
+    
+    
+    
+    print(model_args, data_args, training_args, sep='\n')
+    
+    
+    
     if (
         os.path.exists(training_args.output_dir)
         and os.listdir(training_args.output_dir)
