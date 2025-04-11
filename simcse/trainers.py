@@ -31,7 +31,6 @@ from transformers.file_utils import (
     is_apex_available,
     is_datasets_available,
     is_in_notebook,
-    is_torch_tpu_available,
 )
 from transformers.trainer_callback import (
     CallbackHandler,
@@ -55,6 +54,9 @@ from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import RandomSampler, SequentialSampler
+
+def is_torch_tpu_available():
+    return False
 
 if is_torch_tpu_available():
     import torch_xla.core.xla_model as xm
