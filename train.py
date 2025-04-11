@@ -33,9 +33,20 @@ from transformers import (
 from transformers.tokenization_utils_base import BatchEncoding, PaddingStrategy, PreTrainedTokenizerBase
 from transformers.trainer_utils import is_main_process
 from transformers.data.data_collator import DataCollatorForLanguageModeling
-from transformers.file_utils import cached_property, torch_required, is_torch_available, is_torch_tpu_available
+from transformers.file_utils import cached_property, is_torch_available, is_torch_tpu_available
 from simcse.models import RobertaForCL, BertForCL
 from simcse.trainers import CLTrainer
+
+def torch_required(func):
+    # Chose a different decorator name than in tests so it's clear they are not the same.
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if is_torch_available():
+            return func(*args, **kwargs)
+        else:
+            raise ImportError(f"Method `{func.__name__}` requires PyTorch.")
+
+    return wrapper
 
 logger = logging.getLogger(__name__)
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_MASKED_LM_MAPPING.keys())
