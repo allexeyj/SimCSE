@@ -278,10 +278,10 @@ def main():
                                   preprocessing_num_workers=None,
                                   train_file='/kaggle/input/simcse-data/ru_hnp_for_simcse.csv',
                                   max_seq_length=32, pad_to_max_length=False, mlm_probability=0.15)
-    training_args = TrainingArguments(output_dir='result/my-sup-simcse-bert-base-uncased', overwrite_output_dir=True,
+    training_args = OurTrainingArguments(output_dir='result/my-sup-simcse-bert-base-uncased', overwrite_output_dir=True,
                                      do_train=True,
                                      do_eval=True, do_predict=False,
-                                     evaluation_strategy=IntervalStrategy.STEPS, prediction_loss_only=False,
+                                     eval_strategy=IntervalStrategy.STEPS, prediction_loss_only=False,
                                      per_device_train_batch_size=128, per_device_eval_batch_size=8,
                                      per_gpu_train_batch_size=None, per_gpu_eval_batch_size=None,
                                      gradient_accumulation_steps=1, eval_accumulation_steps=None, learning_rate=5e-05,
